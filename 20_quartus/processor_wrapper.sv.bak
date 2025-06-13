@@ -1,0 +1,46 @@
+module processor_wrapper(
+	input  logic        CLOCK_50,
+	input  logic [3:0]  KEY,
+	input  logic [9:0]  SW,
+	input  logic [9:0]  GPI,
+	output logic [25:0] GPO,
+	output logic [9:0]  LEDR,
+	output logic [6:0]  HEX0,
+	output logic [6:0]  HEX1,       
+	output logic [6:0]  HEX2,
+	output logic [6:0]  HEX3,
+	output logic [6:0]  HEX4,
+	output logic [6:0]  HEX5
+);
+wire        clk;
+wire        rst_n;
+wire [31:0] proc_SW;       // Input
+wire [31:0] proc_HEX [8];
+wire [31:0] proc_GPI;
+wire [31:0] proc_GPO_A;
+wire [31:0] proc_GPO_B;
+wire [31:0] proc_GPO_C;
+wire [31:0] proc_GPO_D;
+
+assign clk      =  CLOCK_50;
+assign rst_n    =  KEY[0];
+assign proc_SW  = {24'b0, SW[7:0] };
+assign proc_GPI = {22'b0, GPI[9:0]};
+
+
+processor   CPU (
+      .clk_i        (clk       ),
+      .rst_n        (rst_n     ),
+      .input_switch (proc_SW   ),  
+      .input_port   (proc_GPI  ),  
+      .output_port_A(proc_GPO_A),  
+      .output_port_B(proc_GPO_B),  
+      .output_port_C(proc_GPO_C),  
+      .output_port_D(proc_GPO_D)   
+);
+
+
+
+  
+endmodule
+

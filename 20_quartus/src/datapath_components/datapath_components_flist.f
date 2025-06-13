@@ -1,0 +1,13 @@
+./../../00_src/datapath_components/encoder.sv
+./../../00_src/datapath_components/mux.sv
+./../../00_src/datapath_components/decoder.sv
+./../../00_src/datapath_components/adder_32bit.sv
+./../../00_src/datapath_components/demux_1X16.sv
+./../../00_src/datapath_components/demux_1X16_32bit.sv
+./../../00_src/datapath_components/D_flip_flop.sv
+./../../00_src/datapath_components/register.sv
+./../../00_src/datapath_components/comparators.sv
+./../../00_src/datapath_components/counter.sv
+./../../00_src/datapath_components/multiplier.sv
+./../../00_src/datapath_components/shifter_32bit.sv
+./../../00_src/datapath_components/half_adder.sv

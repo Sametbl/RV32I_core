@@ -1,0 +1,199 @@
+module processor (
+    input  logic        clk_i        ,
+    input  logic        rst_n        ,
+    input  logic [31:0] input_switch ,  // Input data from Switch
+    input  logic [31:0] input_port   ,  // General-Purpose Input  PORT
+    output logic [31:0] output_port_A,  // General-Purpose Output PORT A
+    output logic [31:0] output_port_B,  // General-Purpose Output PORT B
+    output logic [31:0] output_port_C,  // General-Purpose Output PORT C
+    output logic [31:0] output_port_D   // General-Purpose Output PORT C
+);
+/* verilator lint_off UNOPTFLAT */
+
+// logic    ecall;
+// logic    ebreak;
+
+logic IF_buffer_en;    // IF/ID  buffer enable
+logic ID_buffer_en;    // ID/EX  buffer enable
+logic EX_buffer_en;    // EX/MEM buffer enable
+logic MEM_buffer_en;   // MEM/WB buffer enable
+logic branch_miss;     // ACTIVE LOW - Branch Misprediction in General (both case)
+logic stall_from_ID;
+
+assign IF_buffer_en    = ~stall_from_ID;
+assign ID_buffer_en    = 1'b1;
+assign EX_buffer_en    = 1'b1;
+assign MEM_buffer_en   = 1'b1;
+// ------------------------------- FETCH ----------------------------------------
+branch_t  alu_prd_pkg;
+fetch_t   fetch_pkg;
+
+fetch_unit  Fetch_Unit (
+    .i_clk           (clk_i         ),
+    .i_rstn          (rst_n         ),
+    .i_fetch_buff_en (IF_buffer_en  ),   // IF/ID buffer enable
+    .i_alu_prd_pkg   (alu_prd_pkg   ),   // Input Data package from ALU of the executing branch instruction
+    .o_fetch_pkg     (fetch_pkg     ),   // Output data packed of Fetch stage (Buffered)
+    .o_branch_miss   (branch_miss   )    // ACTIVE LOW - Branch Misprediction in General
+);
+
+
+
+// ------------------------------- DECODE (ID) ---------------------------------------
+
+decode_t    decode_pkg_ID;  // Decode data package in ID stages
+decode_t    decode_pkg_EX;  // Decode data package in EX stages
+writeback_t wb_pkg;       // Writeback data package
+wire [63:0] EX_rs_data;
+wire [31:0] rf_rs1_data;  // RS1 data from Regfile (rf)
+wire [31:0] rf_rs2_data;  // RS2 data from Regfile (rf)
+
+decoder      Instr_Decode(
+    .i_stall        (stall_from_ID  ),    // Insert a NOP instruction when a Stall is triggered
+    .i_fetch_dcd_pkg(fetch_pkg      ),    // Input  data package from Fetch Stage
+    .o_decode_pkg   (decode_pkg_ID  ),    // Output decoded data package 
+    .o_ebreak       (),                   // Reserved
+    .o_ecall        ()                    // Reserved
+);
+
+
+regfile Register_File   (                       
+        .i_clk     (clk_i                 ),
+        .i_rstn    (rst_n                 ),
+        .i_wb_pkg  (wb_pkg                ),
+        .i_rs1_addr(decode_pkg_ID.rs1_addr),  
+        .i_rs2_addr(decode_pkg_ID.rs2_addr),  
+        .o_rs1_data(rf_rs1_data           ), // Asynchronous Read
+        .o_rs2_data(rf_rs2_data           )  // Asynchronous Read
+);
+
+
+hazard_detection    Hazard_Detection  (
+        .i_rs1_addr     (decode_pkg_ID.rs1_addr                    ),
+        .i_rs2_addr     (decode_pkg_ID.rs2_addr                    ), 
+        .i_rd_addr_EX   (decode_pkg_EX.rd_addr                     ), 
+        .i_rd_addr_WB   (wb_pkg.rd_addr                            ), 
+        .i_wb_wren      (wb_pkg.wren                               ), 
+        .i_ex_load_instr(decode_pkg_EX.load_en & decode_pkg_EX.wren), 
+        .o_stall_from_ID(stall_from_ID                             )  
+);
+
+
+register #(.WIDTH($bits(decode_pkg_EX)))  ID_Decoder_package_buffer (
+        .clk  (clk_i          ),
+        .rst_n(rst_n          ),
+        .en   (ID_buffer_en   ),  // Decode stage enable 
+        .D    (decode_pkg_ID  ), 
+        .Q    (decode_pkg_EX  )
+);
+
+register #(.WIDTH(64))  ID_Regfile_data_buffer (
+        .clk  (clk_i                       ),
+        .rst_n(rst_n                       ),
+        .en   (ID_buffer_en                ),  // ID/EX buffer enable 
+        .D    ({rf_rs2_data, rf_rs1_data}  ), 
+        .Q    (EX_rs_data                  )
+);
+
+// verilator lint_on UNOPTFLAT //
+
+// -------------------------------- EXECUTE -------------------------------
+lsu_t       abt_lsu_pkg_d, abt_lsu_pkg_q;
+pipe_buff_t alu_mem_pkg_d, alu_mem_pkg_q;
+alu_t       abt_alu_pkg;
+fwd_t       mem_fwd_pkg; 
+fwd_t       wb_fwd_pkg; 
+
+arbitrator    Arbitrating(
+        .i_dcd_EX_pkg (decode_pkg_EX),   // Decode data package in EX stage 
+        .i_rs_data    (EX_rs_data   ),   // RS1 and RS2 data from Regfile 
+        .i_mem_fwd_pkg(mem_fwd_pkg  ),
+        .i_wb_fwd_pkg (wb_fwd_pkg   ),
+        .o_abt_alu_pkg(abt_alu_pkg  ),
+        .o_abt_lsu_pkg(abt_lsu_pkg_d)
+);
+
+
+alu  ALU    (
+        .i_abt_alu_pkg(abt_alu_pkg  ),       
+        .i_invalidate (1'b0         ),   // Invalidating instruction when neccesary
+        .o_alu_prd_pkg(alu_prd_pkg  ),   // Output data package to updating Branch Prediction 
+        .o_alu_mem_pkg(alu_mem_pkg_d)    // Output data package to MEM stage
+);
+
+
+
+register #(.WIDTH($bits(alu_mem_pkg_q)))  EX_ALU_data_buffer (
+        .clk  (clk_i         ),
+        .rst_n(rst_n         ),
+        .en   (EX_buffer_en  ),  // EX/MEM buffer enable 
+        .D    (alu_mem_pkg_d ), 
+        .Q    (alu_mem_pkg_q )
+);
+
+register #(.WIDTH($bits(abt_lsu_pkg_q)))  EX_LSU_control_buffer (
+        .clk  (clk_i         ),
+        .rst_n(rst_n         ),
+        .en   (EX_buffer_en  ),  // EX/MEM buffer enable 
+        .D    (abt_lsu_pkg_d ), 
+        .Q    (abt_lsu_pkg_q )
+);
+
+
+assign mem_fwd_pkg.fwd_rd_addr  = alu_mem_pkg_q.rd_addr;
+assign mem_fwd_pkg.fwd_rd_data  = alu_mem_pkg_q.rd_data;
+assign mem_fwd_pkg.fwd_allow    = (alu_mem_pkg_q.wren & alu_mem_pkg_q.valid) & ~(abt_lsu_pkg_q.load_en);
+
+// -------------------------------- MEMOPRY ACCESS -------------------------------
+pipe_buff_t alu_wb_pkg_q;
+wire [31:0] lsu_load_data;
+
+lsu #(.DMEM_DEPTH(8)) LSU  (
+            .i_clk           (clk_i                ),
+            .i_rstn          (rst_n                ),
+            .i_invalidate    (1'b0                 ),
+            .i_lsu_ctrl_pkg  (abt_lsu_pkg_q        ),
+            .i_effective_addr(alu_mem_pkg_q.rd_data),
+            .o_lsu_load_data (lsu_load_data        ),
+            // Peripherals
+            .i_sw            (input_switch         ),
+            .i_in_port       (input_port           ),
+            .o_out_port_A    (output_port_A        ),
+            .o_out_port_B    (output_port_B        ),
+            .o_out_port_C    (output_port_C        ),
+            .o_out_port_D    (output_port_D        )
+);
+
+
+register #(.WIDTH($bits(alu_wb_pkg_q)))  MEM_ALU_data_buffer (
+        .clk  (clk_i         ),
+        .rst_n(rst_n         ),
+        .en   (MEM_buffer_en ),  // MEM/WB buffer enable 
+        .D    (alu_mem_pkg_q ), 
+        .Q    (alu_wb_pkg_q  )
+);
+
+
+
+// ------------------------------------ WRITEBACK ----------------------------------
+mux_2x1   WB_mux (
+        .sel  (alu_wb_pkg_q.rd_data_sel[0]),
+        .i_0  (alu_wb_pkg_q.rd_data       ),  // Data from ALU (default)  (including PC + 4)
+        .i_1  (lsu_load_data              ),  // Date from LSU 
+        .o_mux(wb_pkg.rd_data             )
+);
+
+assign wb_pkg.rd_addr = alu_wb_pkg_q.rd_addr;
+assign wb_pkg.wren    = alu_wb_pkg_q.wren & alu_wb_pkg_q.valid;
+
+
+assign wb_fwd_pkg.fwd_rd_addr  = wb_pkg.rd_addr;
+assign wb_fwd_pkg.fwd_rd_data  = wb_pkg.rd_data;
+assign wb_fwd_pkg.fwd_allow    = wb_pkg.wren;
+
+
+
+endmodule 
+
+
+
