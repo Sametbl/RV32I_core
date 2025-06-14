@@ -1,0 +1,8 @@
+%Error: ../01_tb/testbench.v:44:4: Unsupported or unknown PLI call: '$shm_open'
+   44 |    $shm_open("waves.shm");
+      |    ^~~~~~~~~
+%Error: ../01_tb/testbench.v:45:4: Unsupported or unknown PLI call: '$shm_probe'
+                                 : ... Suggested alternative: '$strobe'
+   45 |    $shm_probe("AS");
+      |    ^~~~~~~~~~
+        ... See the manual at https://verilator.org/verilator_doc.html for more assistance.

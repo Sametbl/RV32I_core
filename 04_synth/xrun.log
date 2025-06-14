@@ -1,0 +1,151 @@
+xrun(64): 20.09-s001: (c) Copyright 1995-2020 Cadence Design Systems, Inc.
+xrun: *W,FMDEF: The default file type mapping of .sv is being overwritten.
+TOOL:	xrun(64)	20.09-s001: Started on May 24, 2025 at 11:26:14 EDT
+xrun
+	-gui
+	+xm64bit
+	-sv
+	-vlogext .sv
+	-f 00_src/test_flist.f
+		00_src/mux.v
+		00_src/register.v
+		00_src/full_adder.v
+		00_src/shifter_8bit.v
+		00_src/or_gate_8bit.v
+		00_src/xor_gate_8bit.v
+		00_src/not_gate_8bit.v
+		00_src/and_gate_8bit.v
+		00_src/ripple_adder_8bit.v
+		00_src/alu_8bit.v
+		00_src/synth_wrapper.v
+		01_tb/testbench.v
+	01_tb/testbench.v
+	-timescale 1ns/10ps
+	+access+rcw
+file: 00_src/mux.v
+	module worklib.mux_2x1:v
+		errors: 0, warnings: 0
+	module worklib.mux_4x1:v
+		errors: 0, warnings: 0
+	module worklib.mux_8x1:v
+		errors: 0, warnings: 0
+	module worklib.mux_2x1_8bit:v
+		errors: 0, warnings: 0
+	module worklib.mux_4x1_8bit:v
+		errors: 0, warnings: 0
+	module worklib.mux_8x1_8bit:v
+		errors: 0, warnings: 0
+file: 00_src/register.v
+	module worklib.d_flipflop:v
+		errors: 0, warnings: 0
+	module worklib.register_8bit:v
+		errors: 0, warnings: 0
+	module worklib.register_3bit:v
+		errors: 0, warnings: 0
+file: 00_src/full_adder.v
+	module worklib.fulladder:v
+		errors: 0, warnings: 0
+file: 00_src/shifter_8bit.v
+	module worklib.shifter_8bit:v
+		errors: 0, warnings: 0
+	module worklib.reverse_8bit:v
+		errors: 0, warnings: 0
+	module worklib.shift_right_1_8bit:v
+		errors: 0, warnings: 0
+	module worklib.shift_right_2_8bit:v
+		errors: 0, warnings: 0
+	module worklib.shift_right_4_8bit:v
+		errors: 0, warnings: 0
+file: 00_src/or_gate_8bit.v
+	module worklib.or_gate_8bit:v
+		errors: 0, warnings: 0
+file: 00_src/xor_gate_8bit.v
+	module worklib.xor_gate_8bit:v
+		errors: 0, warnings: 0
+file: 00_src/not_gate_8bit.v
+	module worklib.not_gate_8bit:v
+		errors: 0, warnings: 0
+file: 00_src/and_gate_8bit.v
+	module worklib.and_gate_8bit:v
+		errors: 0, warnings: 0
+file: 00_src/ripple_adder_8bit.v
+	module worklib.adder_8bit:v
+		errors: 0, warnings: 0
+	module worklib.ripple_adder_8bit:v
+		errors: 0, warnings: 0
+file: 00_src/alu_8bit.v
+	module worklib.alu_8bit:v
+		errors: 0, warnings: 0
+	module worklib.comparator_4bit:v
+		errors: 0, warnings: 0
+file: 00_src/synth_wrapper.v
+	module worklib.synth_wrapper:v
+		errors: 0, warnings: 0
+file: 01_tb/testbench.v
+	module worklib.testbench:v
+		errors: 0, warnings: 0
+file: 01_tb/testbench.v
+module testbench;
+               |
+xmvlog: *W,RECOME (01_tb/testbench.v,1|15): recompiling design unit worklib.testbench:v.
+	First compiled from line 1 of 01_tb/testbench.v.
+		Caching library 'worklib' ....... Done
+	Elaborating the design hierarchy:
+	Top level design units:
+		testbench
+xmelab: *W,DSEMEL: This SystemVerilog design will be simulated as per IEEE 1800-2009 SystemVerilog simulation semantics. Use -disable_sem2009 option for turning off SV 2009 simulation semantics.
+	Building instance overlay tables: .................... Done
+	Generating native compiled code:
+		worklib.d_flipflop:v <0x35c59e5d>
+			streams:   2, words:   415
+		worklib.register_8bit:v <0x7cfef944>
+			streams:   8, words:  3522
+		worklib.reverse_8bit:v <0x4e65ff07>
+			streams:   0, words:     0
+		worklib.shift_right_4_8bit:v <0x0a682d56>
+			streams:   0, words:     0
+		worklib.shift_right_2_8bit:v <0x72edb9e1>
+			streams:   0, words:     0
+		worklib.shift_right_1_8bit:v <0x6317f09a>
+			streams:   0, words:     0
+		worklib.reverse_8bit:v <0x1a098848>
+			streams:   0, words:     0
+		worklib.shifter_8bit:v <0x6187ef1f>
+			streams:   1, words:   401
+		worklib.register_3bit:v <0x36ddb321>
+			streams:   3, words:  1376
+		worklib.d_flipflop:v <0x75ce217c>
+			streams:   2, words:   415
+		worklib.register_8bit:v <0x2b3bb15d>
+			streams:   8, words:  3705
+		worklib.alu_8bit:v <0x5f3f0440>
+			streams:   3, words:   617
+		worklib.synth_wrapper:v <0x514e86a1>
+			streams:   8, words:  3602
+		worklib.testbench:v <0x7f4514b8>
+			streams:  18, words: 26621
+	Building instance specific data structures.
+	Loading native compiled code:     .................... Done
+	Design hierarchy summary:
+		                  Instances  Unique
+		Modules:                208      25
+		Primitives:             553       4
+		Registers:               62      33
+		Scalar wires:           104       -
+		Expanded wires:          62      10
+		Vectored wires:           6       -
+		Always blocks:           30       3
+		Initial blocks:          10      10
+		Cont. assignments:        0      34
+		Pseudo assignments:      41      33
+		Simulation timescale:  10ps
+	Writing initial simulation snapshot: worklib.testbench:v
+xmsim: *W,DSEM2009: This SystemVerilog design is simulated as per IEEE 1800-2009 SystemVerilog simulation semantics. Use -disable_sem2009 option for turning off SV 2009 simulation semantics.
+
+-------------------------------------
+Relinquished control to SimVision...
+xcelium> 
+xcelium> source /opt/cadence/XCELIUM2009/tools/xcelium/files/xmsimrc
+xcelium> ^C
+xcelium> exit
+TOOL:	xrun(64)	20.09-s001: Exiting on May 24, 2025 at 11:39:51 EDT  (total: 00:13:37)
